@@ -1,0 +1,24 @@
+variable "vpc_cidr_block" {
+  type = string
+  description = "cidr block with series"
+}
+
+variable "pub_sub_cidr_block_1" {
+  type = string
+  description = "cidr block for public subnet 1"
+}
+
+variable "pub_sub_cidr_block_2" {
+  type = string
+  description = "cidr block for public subnet 2"
+}
+
+variable "pub_sub1_az" {
+  type = string
+  description = "availability zone for public subnet 1"
+}
+
+variable "pub_sub2_az" {
+  type = string
+  description = "availability zone for public subnet 2"
+}

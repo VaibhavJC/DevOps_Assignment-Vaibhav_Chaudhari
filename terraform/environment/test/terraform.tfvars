@@ -1,0 +1,7 @@
+region_name = "us-east-1"
+endpoint_url = "http://localhost:4566"
+vpc_cidr_block = "10.20.0.0/16"
+pub_sub_cidr_block_1 = "10.20.0.0/25"
+pub_sub_cidr_block_2 = "10.20.0.128/25"
+pub_sub1_az = "us-east-1a"
+pub_sub2_az = "us-east-1b"
