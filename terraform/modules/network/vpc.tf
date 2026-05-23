@@ -72,9 +72,9 @@ resource "aws_route_table_association" "pub_rt_assoc_2" {
     depends_on = [aws_route_table.pub_rt, aws_subnet.pub_subnet_2, aws_internet_gateway.my_igw]
 }
 
-resource "aws_security_group" "allow_ssh" {
-    name = "allow_ssh"
-    description = "Allow SSH inbound traffic"
+resource "aws_security_group" "allow_ssh_http" {
+    name = "allow_ssh_http"
+    description = "Allow SSH and HTTP inbound traffic"
     vpc_id = aws_vpc.my_vpc.id
 
     ingress {
@@ -83,19 +83,6 @@ resource "aws_security_group" "allow_ssh" {
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
-
-    egress {
-        from_port = 0
-        to_port = 0
-        protocol = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-}
-
-resource "aws_security_group" "allow_http" {
-    name = "allow_http"
-    description = "Allow HTTP inbound traffic"
-    vpc_id = aws_vpc.my_vpc.id
 
     ingress {
         from_port = 80
@@ -110,5 +97,11 @@ resource "aws_security_group" "allow_http" {
         protocol = "-1"
         cidr_blocks = ["0.0.0.0/0"]
     }
+
+    tags = {
+        Name = "allow_ssh_http"
+    }
+
+    depends_on = [aws_vpc.my_vpc]
 }
 
