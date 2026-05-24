@@ -16,30 +16,6 @@ This project is divided into three parts:
 
 ---
 
-## Project Structure
-
-```
-DevOps_Assignment-Vaibhav_Chaudhari/
-├── environment/
-│   └── test/
-│       └── terraform.tfvars        # Environment-specific variable values
-├── modules/                        # Reusable Terraform modules
-│   ├── vpc/
-│   ├── ec2/
-│   ├── ebs/
-│   ├── security_group/
-│   └── s3/
-├── .github/
-│   └── workflows/
-│       └── cost-janitor.yml        # GitHub Actions CI/CD workflow
-├── janitor.sh                      # Cost Janitor bash script
-├── architecture.png
-├── Improvised Architecture.png
-└── README.md
-```
-
----
-
 ## Prerequisites
 
 Make sure the following tools are installed before running the project locally:
