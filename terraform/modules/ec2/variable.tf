@@ -32,3 +32,8 @@ variable "security_group_id" {
   description = "The ID of the security group to associate with the instance."
   type        = string
 }
+
+variable "bucket_name" {
+  type = string
+  description = "name of the s3 bucket"
+}

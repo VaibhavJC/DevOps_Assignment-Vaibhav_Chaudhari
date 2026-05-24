@@ -11,6 +11,7 @@ provider "aws" {
   endpoints {
     ec2 = var.endpoint_url
     s3  = var.endpoint_url
+    iam = var.endpoint_url
   }
 
   default_tags {

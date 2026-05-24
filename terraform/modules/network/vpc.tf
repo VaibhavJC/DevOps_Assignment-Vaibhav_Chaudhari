@@ -105,3 +105,12 @@ resource "aws_security_group" "allow_ssh_http" {
     depends_on = [aws_vpc.my_vpc]
 }
 
+resource "aws_eip" "my_eip" {
+    domain = "vpc"
+
+    tags = {
+        Name = "my_eip"
+    }
+
+    depends_on = [aws_vpc.my_vpc]
+}

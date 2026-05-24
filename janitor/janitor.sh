@@ -20,11 +20,10 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 TOTAL_ORPHANS=0
 TOTAL_COST=0
 
-# create empty files
 echo "" > report.json
-echo "" > report.md
+echo "" > summary.md
 
-# start report.json
+# start json
 cat <<EOF > report.json
 {
   "scan_timestamp": "$TIMESTAMP",
@@ -39,12 +38,20 @@ EOF
 
 FIRST=true
 
-echo "# Cost Janitor Summary" >> report.md
-echo "" >> report.md
+echo "# Cost Janitor Summary" >> summary.md
+echo "" >> summary.md
 
-# -------------------------------
-# Check unattached EBS volumes
-# -------------------------------
+# helper function
+add_comma() {
+  if [ "$FIRST" = false ]; then
+    echo "," >> report.json
+  fi
+  FIRST=false
+}
+
+# ---------------------------------------------------
+# 1. Unattached EBS Volumes
+# ---------------------------------------------------
 
 VOLUMES=$(awslocal ec2 describe-volumes \
   --filters Name=status,Values=available \
@@ -58,11 +65,7 @@ do
   TOTAL_ORPHANS=$((TOTAL_ORPHANS + 1))
   TOTAL_COST=$((TOTAL_COST + EBS_COST_PER_MONTH))
 
-  if [ "$FIRST" = false ]; then
-    echo "," >> report.json
-  fi
-
-  FIRST=false
+  add_comma
 
   cat <<EOF >> report.json
 {
@@ -77,17 +80,65 @@ do
 }
 EOF
 
-  echo "- Unattached EBS Volume: $vol" >> report.md
+  echo "- Unattached EBS Volume: $vol" >> summary.md
 
-  if [ "$MODE" == "delete" ]; then
+  PROTECTED=$(awslocal ec2 describe-volumes \
+    --volume-ids "$vol" \
+    --query "Volumes[0].Tags[?Key=='Protected'].Value" \
+    --output text)
+
+  if [ "$MODE" == "delete" ] && [ "$PROTECTED" != "true" ]; then
     awslocal ec2 delete-volume --volume-id "$vol"
     echo "Deleted $vol"
   fi
 done
 
-# -------------------------------
-# Check unassociated Elastic IPs
-# -------------------------------
+# ---------------------------------------------------
+# 2. Stopped EC2 Instances
+# ---------------------------------------------------
+
+INSTANCES=$(awslocal ec2 describe-instances \
+  --filters Name=instance-state-name,Values=stopped \
+  --query "Reservations[*].Instances[*].InstanceId" \
+  --output text)
+
+for instance in $INSTANCES
+do
+  echo "Found stopped instance: $instance"
+
+  TOTAL_ORPHANS=$((TOTAL_ORPHANS + 1))
+  TOTAL_COST=$((TOTAL_COST + EC2_COST_PER_MONTH))
+  add_comma
+
+  cat <<EOF >> report.json
+{
+  "resource_id": "$instance",
+  "resource_type": "ec2_instance",
+  "reason": "stopped_instance",
+  "age_days": $DAYS,
+  "estimated_monthly_cost_usd": 5,
+  "tags": {},
+  "suggested_action": "terminate",
+  "safe_to_auto_delete": true
+}
+EOF
+
+  echo "- Stopped EC2 Instance: $instance" >> summary.md
+
+  PROTECTED=$(awslocal ec2 describe-instances \
+    --instance-ids "$instance" \
+    --query "Reservations[0].Instances[0].Tags[?Key=='Protected'].Value" \
+    --output text)
+
+  if [ "$MODE" == "delete" ] && [ "$PROTECTED" != "true" ]; then
+    awslocal ec2 terminate-instances --instance-ids "$instance"
+    echo "Terminated $instance"
+  fi
+done
+
+# ---------------------------------------------------
+# 3. Unused Elastic IPs
+# ---------------------------------------------------
 
 EIPS=$(awslocal ec2 describe-addresses \
   --query "Addresses[?AssociationId==null].AllocationId" \
@@ -100,7 +151,7 @@ do
   TOTAL_ORPHANS=$((TOTAL_ORPHANS + 1))
   TOTAL_COST=$((TOTAL_COST + EIP_COST_PER_MONTH))
 
-  echo "," >> report.json
+  add_comma
 
   cat <<EOF >> report.json
 {
@@ -115,7 +166,7 @@ do
 }
 EOF
 
-  echo "- Unused Elastic IP: $eip" >> report.md
+  echo "- Unused Elastic IP: $eip" >> summary.md
 
   if [ "$MODE" == "delete" ]; then
     awslocal ec2 release-address --allocation-id "$eip"
@@ -123,24 +174,74 @@ EOF
   fi
 done
 
-# -------------------------------
-# Finish report
-# -------------------------------
+# ---------------------------------------------------
+# 4. Missing Required Tags
+# ---------------------------------------------------
 
+ALL_INSTANCES=$(awslocal ec2 describe-instances \
+  --query "Reservations[*].Instances[*].InstanceId" \
+  --output text)
+
+for instance in $ALL_INSTANCES
+do
+  TAGS=$(awslocal ec2 describe-instances \
+    --instance-ids "$instance" \
+    --query "Reservations[0].Instances[0].Tags[*].Key" \
+    --output text)
+
+  MISSING=""
+
+  for tag in "${REQUIRED_TAGS[@]}"
+  do
+    echo "$TAGS" | grep -q "$tag"
+
+    if [ $? -ne 0 ]; then
+      MISSING="$MISSING $tag"
+    fi
+  done
+
+  if [ ! -z "$MISSING" ]; then
+
+    echo "Instance $instance missing tags:$MISSING"
+
+    TOTAL_ORPHANS=$((TOTAL_ORPHANS + 1))
+
+    add_comma
+
+    cat <<EOF >> report.json
+{
+  "resource_id": "$instance",
+  "resource_type": "ec2_instance",
+  "reason": "missing_tags",
+  "age_days": 0,
+  "estimated_monthly_cost_usd": 0,
+  "tags": {
+    "missing": "$MISSING"
+  },
+  "suggested_action": "add_tags",
+  "safe_to_auto_delete": false
+}
+EOF
+
+    echo "- Missing Tags on Instance: $instance -> $MISSING" >> summary.md
+  fi
+done
+
+# finish json
 cat <<EOF >> report.json
   ]
 }
 EOF
 
-# update summary values
-sed -i "s/\"total_orphans\": 0/\"total_orphans\": $TOTAL_ORPHANS/" report.json
-sed -i "s/\"estimated_monthly_waste_usd\": 0/\"estimated_monthly_waste_usd\": $TOTAL_COST/" report.json
+# update summary
+sed -i.bak "s/\"total_orphans\": 0/\"total_orphans\": $TOTAL_ORPHANS/" report.json
+sed -i.bak "s/\"estimated_monthly_waste_usd\": 0/\"estimated_monthly_waste_usd\": $TOTAL_COST/" report.json
 
-echo "" >> report.md
-echo "Total Orphans: $TOTAL_ORPHANS" >> report.md
-echo "Estimated Monthly Waste: \$$TOTAL_COST" >> report.md
+echo "" >> summary.md
+echo "Total Orphans: $TOTAL_ORPHANS" >> summary.md
+echo "Estimated Monthly Waste: \$$TOTAL_COST" >> summary.md
 
-# fail in dry-run mode
+# fail CI in dry-run mode
 if [ "$MODE" == "dry-run" ] && [ $TOTAL_ORPHANS -gt 0 ]; then
   exit 1
 fi

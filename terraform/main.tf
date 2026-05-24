@@ -21,6 +21,7 @@ module "ec2" {
   public_subnet_1_id = module.vpc.public_subnet_1_id
   public_subnet_2_id = module.vpc.public_subnet_2_id
   security_group_id  = module.vpc.security_group_id
+  bucket_name        = var.bucket_name
 }
 
 
