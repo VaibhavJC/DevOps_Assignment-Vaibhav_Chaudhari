@@ -9,6 +9,7 @@ module "vpc" {
   public_subnet_1_id   = module.vpc.public_subnet_1_id
   public_subnet_2_id   = module.vpc.public_subnet_2_id
   security_group_id    = module.vpc.security_group_id
+
 }
 
 module "ec2" {
@@ -20,13 +21,14 @@ module "ec2" {
   public_subnet_1_id = module.vpc.public_subnet_1_id
   public_subnet_2_id = module.vpc.public_subnet_2_id
   security_group_id  = module.vpc.security_group_id
-  depends_on         = [module.vpc]
 }
+
+
 
 module "ebs" {
   source            = "./modules/ebs"
-  availability_zone = var.ebs_availability_zone
-  size              = var.ebs_size
+  ebs_availability_zone = var.ebs_availability_zone
+  ebs_size              = var.ebs_size
 }
 
 module "s3_bucket" {

@@ -26,3 +26,16 @@ resource "aws_instance" "ec2_instance-2" {
     }
 }
 
+resource "aws_instance" "ec2_instance-3" {
+    ami = var.ami_id
+    instance_type = var.instance_type
+    key_name = aws_key_pair.key_pair.key_name
+    subnet_id = var.public_subnet_1_id
+    vpc_security_group_ids = [var.security_group_id]
+
+    instance_state = "stopped"
+
+    tags = {
+      Name = "web-tier"
+    }
+}
