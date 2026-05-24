@@ -1,1 +1,148 @@
+name: Cost Janitor CI
 
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  cost-janitor:
+
+    runs-on: ubuntu-latest
+
+    services:
+      localstack:
+        image: localstack/localstack-pro:latest
+
+        ports:
+          - 4566:4566
+
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+          DEBUG: 1
+          SERVICES: ec2,s3,iam
+
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+
+        options: >-
+          --health-cmd="curl -f http://localhost:4566/_localstack/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+
+    steps:
+
+      # Checkout Repository
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setup Terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Install AWS CLI + awslocal
+
+      - name: Install Tools
+        run: |
+          pip install awscli-local
+
+      # Wait for LocalStack
+
+      - name: Wait for LocalStack
+        run: sleep 20
+
+      # Register Test AMI
+
+      - name: Register Test AMI
+        run: |
+
+          aws --endpoint-url=http://localhost:4566 ec2 register-image \
+            --name test-ami \
+            --description "Test AMI" \
+            --architecture x86_64 \
+            --root-device-name /dev/sda1 \
+            --virtualization-type hvm \
+            --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=8}'
+
+      # Save Generated AMI ID
+
+      - name: Get AMI ID
+        run: |
+
+          AMI_ID=$(aws --endpoint-url=http://localhost:4566 ec2 describe-images \
+            --owners self \
+            --query "Images[0].ImageId" \
+            --output text)
+
+          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+
+          echo "Generated AMI ID: $AMI_ID"
+
+      # Terraform Init
+
+      - name: Terraform Init
+        run: terraform init
+
+      # Terraform Apply
+
+      - name: Terraform Apply
+        run: |
+
+          terraform apply -auto-approve \
+            -var-file="environment/test/terraform.tfvars" \
+            -var="ami_id=${AMI_ID}"
+
+      # Run Cost Janitor
+
+      - name: Run Cost Janitor
+        id: janitor
+        run: |
+
+          chmod +x janitor/janitor.sh
+
+          cd janitor
+
+          ./janitor.sh --dry-run || echo "orphans_found=true" >> $GITHUB_OUTPUT
+
+      # Upload JSON Report
+
+      - name: Upload report.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-json
+          path: janitor/report.json
+
+      # Upload Markdown Report
+
+      - name: Upload report.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-md
+          path: janitor/summary.md
+
+      # Comment PR with Findings
+
+      - name: Comment PR
+        if: steps.janitor.outputs.orphans_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+
+            const fs = require('fs');
+
+            const body = fs.readFileSync('janitor/summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

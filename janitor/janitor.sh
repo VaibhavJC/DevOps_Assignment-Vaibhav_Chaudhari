@@ -49,9 +49,7 @@ add_comma() {
   FIRST=false
 }
 
-# ---------------------------------------------------
 # 1. Unattached EBS Volumes
-# ---------------------------------------------------
 
 VOLUMES=$(awslocal ec2 describe-volumes \
   --filters Name=status,Values=available \
@@ -93,9 +91,8 @@ EOF
   fi
 done
 
-# ---------------------------------------------------
+
 # 2. Stopped EC2 Instances
-# ---------------------------------------------------
 
 INSTANCES=$(awslocal ec2 describe-instances \
   --filters Name=instance-state-name,Values=stopped \
@@ -136,9 +133,7 @@ EOF
   fi
 done
 
-# ---------------------------------------------------
 # 3. Unused Elastic IPs
-# ---------------------------------------------------
 
 EIPS=$(awslocal ec2 describe-addresses \
   --query "Addresses[?AssociationId==null].AllocationId" \
@@ -174,9 +169,7 @@ EOF
   fi
 done
 
-# ---------------------------------------------------
 # 4. Missing Required Tags
-# ---------------------------------------------------
 
 ALL_INSTANCES=$(awslocal ec2 describe-instances \
   --query "Reservations[*].Instances[*].InstanceId" \
