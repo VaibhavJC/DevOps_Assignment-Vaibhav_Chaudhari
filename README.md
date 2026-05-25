@@ -82,14 +82,7 @@ Use the following dummy credentials (required by LocalStack):
 LocalStack does not provide default AMIs, so you need to register one manually before running Terraform.
 
 ```bash
-aws ec2 register-image \
-  --name test-ami \
-  --description "Test AMI for LocalStack" \
-  --root-device-name /dev/sda1 \
-  --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=8}' \
-  --virtualization-type hvm \
-  --architecture x86_64 \
-  --endpoint-url=http://localhost:4566
+aws ec2 register-image --name test-ami --description "Test AMI" --architecture x86_64 --root-device-name /dev/sda1 --virtualization-type hvm --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=8}" --endpoint-url=http://localhost:4566
 ```
 
 Copy the `ami-id` from the output and paste it into `environment/test/terraform.tfvars`.

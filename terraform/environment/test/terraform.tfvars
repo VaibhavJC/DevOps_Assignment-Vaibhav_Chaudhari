@@ -10,7 +10,7 @@ pub_sub1_az = "us-east-1a"
 pub_sub2_az = "us-east-1b"
 
 // EC2 instance configuration
-ami_id = "ami-7670171b"  // replace with your desired AMI ID
+ami_id = "ami-af46c959"  // replace with your desired AMI ID
 instance_type = "t2.micro"
 key_name = "my-key-pair"
 

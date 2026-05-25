@@ -1,0 +1,58 @@
+{
+  "scan_timestamp": "2026-05-25T13:32:30Z",
+  "account_id": "000000000000",
+  "region": "us-east-1",
+  "summary": {
+    "total_orphans": 4,
+    "estimated_monthly_waste_usd": 11
+  },
+  "findings": [
+{
+  "resource_id": "vol-df2e77be20b81d36f",
+  "resource_type": "ebs_volume",
+  "reason": "unattached",
+  "age_days": 0,
+  "estimated_monthly_cost_usd": 8,
+  "tags": {},
+  "suggested_action": "delete",
+  "safe_to_auto_delete": true
+}
+,
+{
+  "resource_id": "eipalloc-b3601b6f326ea8d22",
+  "resource_type": "elastic_ip",
+  "reason": "not_attached",
+  "age_days": 0,
+  "estimated_monthly_cost_usd": 3,
+  "tags": {},
+  "suggested_action": "release",
+  "safe_to_auto_delete": true
+}
+,
+{
+  "resource_id": "i-00fc16e004f3fcae2",
+  "resource_type": "ec2_instance",
+  "reason": "missing_tags",
+  "age_days": 0,
+  "estimated_monthly_cost_usd": 0,
+  "tags": {
+    "missing": " Project Environment Owner"
+  },
+  "suggested_action": "add_tags",
+  "safe_to_auto_delete": false
+}
+,
+{
+  "resource_id": "i-c42e7e89ed95fa243",
+  "resource_type": "ec2_instance",
+  "reason": "missing_tags",
+  "age_days": 0,
+  "estimated_monthly_cost_usd": 0,
+  "tags": {
+    "missing": " Project Environment Owner"
+  },
+  "suggested_action": "add_tags",
+  "safe_to_auto_delete": false
+}
+  ]
+}

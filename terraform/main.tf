@@ -25,9 +25,8 @@ module "ec2" {
 }
 
 
-
 module "ebs" {
-  source            = "./modules/ebs"
+  source                = "./modules/ebs"
   ebs_availability_zone = var.ebs_availability_zone
   ebs_size              = var.ebs_size
 }
