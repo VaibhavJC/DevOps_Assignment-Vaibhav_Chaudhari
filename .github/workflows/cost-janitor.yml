@@ -137,7 +137,7 @@ jobs:
 
             const fs = require('fs');
 
-            const body = fs.readFileSync('janitor/summary.md', 'utf8');
+            const body = fs.readFileSync('janitor/report.md', 'utf8');
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
