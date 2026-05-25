@@ -1,11 +1,15 @@
 name: Cost Janitor CI
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: 
   pull_request:
     branches:
       - main
-
+      
+permissions:
+  contents: read
+  pull-requests: write
+  
 jobs:
   cost-janitor:
 
@@ -93,6 +97,18 @@ jobs:
         working-directory: ./terraform
         run: terraform init
 
+      # Terraform Format Check
+      
+      - name: Terraform Format Check
+        working-directory: ./terraform
+        run: terraform fmt -check
+
+      # Terraform Validate
+      
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
+        
       # Terraform Apply
 
       - name: Terraform Apply
