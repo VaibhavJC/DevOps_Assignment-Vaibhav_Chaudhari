@@ -92,8 +92,8 @@ jobs:
       # Terraform Apply
 
       - name: Terraform Apply
+        working-directory: ./terraform
         run: |
-
           terraform apply -auto-approve \
             -var-file="environment/test/terraform.tfvars" \
             -var="ami_id=${AMI_ID}"
