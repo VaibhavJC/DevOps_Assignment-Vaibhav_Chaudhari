@@ -15,7 +15,7 @@
 - [ ] Walkthrough video link below is accessible (unlisted is fine) 
   
 ## Walkthrough video 
-Link (Loom / YouTube unlisted / Google Drive):  
+Link (Loom / YouTube unlisted / Google Drive): https://drive.google.com/file/d/1_1qxe7omlbEje_9aBXJh9QYuICCvePtK/view?usp=sharing
 Length: max 5 minutes 
   
 ## Sample report 
