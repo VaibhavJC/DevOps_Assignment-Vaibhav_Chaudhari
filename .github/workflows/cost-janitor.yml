@@ -126,7 +126,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-md
-          path: janitor/summary.md
+          path: janitor/report.md
 
       # Comment PR with Findings
 

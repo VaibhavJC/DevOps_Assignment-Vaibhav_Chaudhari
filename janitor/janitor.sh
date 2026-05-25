@@ -21,7 +21,7 @@ TOTAL_ORPHANS=0
 TOTAL_COST=0
 
 echo "" > report.json
-echo "" > summary.md
+echo "" > report.md
 
 # start json
 cat <<EOF > report.json
@@ -38,8 +38,8 @@ EOF
 
 FIRST=true
 
-echo "# Cost Janitor Summary" >> summary.md
-echo "" >> summary.md
+echo "# Cost Janitor Summary" >> report.md
+echo "" >> report.md
 
 # helper function
 add_comma() {
@@ -78,7 +78,7 @@ do
 }
 EOF
 
-  echo "- Unattached EBS Volume: $vol" >> summary.md
+  echo "- Unattached EBS Volume: $vol" >> report.md
 
   PROTECTED=$(awslocal ec2 describe-volumes \
     --volume-ids "$vol" \
@@ -120,7 +120,7 @@ do
 }
 EOF
 
-  echo "- Stopped EC2 Instance: $instance" >> summary.md
+  echo "- Stopped EC2 Instance: $instance" >> report.md
 
   PROTECTED=$(awslocal ec2 describe-instances \
     --instance-ids "$instance" \
@@ -161,7 +161,7 @@ do
 }
 EOF
 
-  echo "- Unused Elastic IP: $eip" >> summary.md
+  echo "- Unused Elastic IP: $eip" >> report.md
 
   if [ "$MODE" == "delete" ]; then
     awslocal ec2 release-address --allocation-id "$eip"
@@ -216,7 +216,7 @@ do
 }
 EOF
 
-    echo "- Missing Tags on Instance: $instance -> $MISSING" >> summary.md
+    echo "- Missing Tags on Instance: $instance -> $MISSING" >> report.md
   fi
 done
 
@@ -230,9 +230,9 @@ EOF
 sed -i.bak "s/\"total_orphans\": 0/\"total_orphans\": $TOTAL_ORPHANS/" report.json
 sed -i.bak "s/\"estimated_monthly_waste_usd\": 0/\"estimated_monthly_waste_usd\": $TOTAL_COST/" report.json
 
-echo "" >> summary.md
-echo "Total Orphans: $TOTAL_ORPHANS" >> summary.md
-echo "Estimated Monthly Waste: \$$TOTAL_COST" >> summary.md
+echo "" >> report.md
+echo "Total Orphans: $TOTAL_ORPHANS" >> report.md
+echo "Estimated Monthly Waste: \$$TOTAL_COST" >> report.md
 
 # fail CI in dry-run mode
 if [ "$MODE" == "dry-run" ] && [ $TOTAL_ORPHANS -gt 0 ]; then
